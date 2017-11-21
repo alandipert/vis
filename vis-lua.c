@@ -618,9 +618,8 @@ static const char *keymapping(Vis *vis, const char *keys, const Arg *arg) {
 static int windows_iter(lua_State *L);
 static int windows(lua_State *L) {
 	Vis *vis = obj_ref_check(L, 1, "vis");
-	Win **handle = lua_newuserdata(L, sizeof *handle), *next;
-	for (next = vis->windows; next && next->file->internal; next = next->next);
-	*handle = next;
+	Win **handle = lua_newuserdata(L, sizeof *handle);
+	*handle = vis->windows;
 	lua_pushcclosure(L, windows_iter, 1);
 	return 1;
 }
@@ -629,11 +628,9 @@ static int windows_iter(lua_State *L) {
 	Win **handle = lua_touserdata(L, lua_upvalueindex(1));
 	if (!*handle)
 		return 0;
-	Win *win = obj_ref_new(L, *handle, VIS_LUA_TYPE_WINDOW), *next;
-	if (win) {
-		for (next = win->next; next && next->file->internal; next = next->next);
-		*handle = next;
-	}
+	Win *win = obj_ref_new(L, *handle, VIS_LUA_TYPE_WINDOW);
+	if (win)
+		*handle = win->next;
 	return 1;
 }
 
@@ -1741,26 +1738,6 @@ static int window_draw(lua_State *L) {
 	return 0;
 }
 
-/***
- * Close window.
- *
- * After a successful call the Window reference becomes invalid and
- * must no longer be used.
- *
- * @function close
- * @tparam bool force whether unsaved changes should be discarded
- * @treturn bool whether the window was closed
- */
-static int window_close(lua_State *L) {
-	Win *win = obj_ref_check(L, 1, VIS_LUA_TYPE_WINDOW);
-	bool force = lua_isboolean(L, 2) && lua_toboolean(L, 2);
-	bool close = force || vis_window_closable(win);
-	if (close)
-		vis_window_close(win);
-	lua_pushboolean(L, close);
-	return 1;
-}
-
 static const struct luaL_Reg window_funcs[] = {
 	{ "__index", window_index },
 	{ "__newindex", newindex_common },
@@ -1771,7 +1748,6 @@ static const struct luaL_Reg window_funcs[] = {
 	{ "style", window_style },
 	{ "status", window_status },
 	{ "draw", window_draw },
-	{ "close", window_close },
 	{ NULL, NULL },
 };
 

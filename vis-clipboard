@@ -83,11 +83,11 @@ vc_xclip_paste() {
 }
 
 vc_mac_copy() {
-	pbcopy
+	reattach-to-user-namespace pbcopy
 }
 
 vc_mac_paste() {
-	pbpaste
+	reattach-to-user-namespace pbpaste
 }
 
 vc_cygwin_copy() {
